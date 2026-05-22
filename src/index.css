@@ -1,0 +1,57 @@
+@import 'tailwindcss';
+
+@theme {
+  /* LevelUp brand greens (sampled from the UP arrow mark) */
+  --color-lu-green: #4cb944;
+  --color-lu-green-light: #6ed05f;
+  --color-lu-green-dark: #2f9a2c;
+  --color-lu-green-deep: #1f7a23;
+
+  /* Neutral surface palette */
+  --color-ink: #0f1a14;
+  --color-ink-soft: #233029;
+  --color-surface: #f4f7f4;
+  --color-card: #ffffff;
+  --color-line: #e2e8e2;
+
+  --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Subtle pulse used for the LIVE indicator */
+@keyframes lu-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.lu-live-dot {
+  animation: lu-pulse 1.6s ease-in-out infinite;
+}
