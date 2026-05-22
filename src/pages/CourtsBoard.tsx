@@ -26,6 +26,7 @@ function useBigScreenScale() {
 function CourtTile({ court, editable }: { court: Court; editable: boolean }) {
   const [teamA, setTeamA] = useState(court.teamA)
   const [teamB, setTeamB] = useState(court.teamB)
+  const [time, setTime] = useState(court.time ?? '')
   const [note, setNote] = useState(court.note ?? '')
   const empty = !court.teamA && !court.teamB
 
@@ -34,26 +35,45 @@ function CourtTile({ court, editable }: { court: Court; editable: boolean }) {
 
   return (
     <div className="relative flex min-h-0 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-[0.9em]">
-      <div className="flex items-baseline justify-between gap-2">
+      <div className="flex items-center justify-between gap-2">
         <span className="text-[1.35em] font-extrabold leading-none text-white">{court.name}</span>
         {editable ? (
           <input
-            value={note}
-            placeholder="note"
+            value={time}
+            placeholder="time"
             onChange={(e) => {
-              setNote(e.target.value)
-              updateCourt(court.id, { note: e.target.value })
+              setTime(e.target.value)
+              updateCourt(court.id, { time: e.target.value })
             }}
-            className="w-[8em] bg-transparent text-right text-[0.58em] font-semibold uppercase tracking-widest text-white/55 placeholder-white/20 outline-none"
+            className="w-[5.5em] rounded-md bg-lu-green/15 px-2 py-[0.1em] text-right text-[0.7em] font-bold text-lu-green-light placeholder-lu-green-light/40 outline-none focus:bg-lu-green/25"
           />
         ) : (
-          court.note && (
-            <span className="truncate text-[0.58em] font-semibold uppercase tracking-widest text-white/40">
-              {court.note}
+          court.time && (
+            <span className="rounded-md bg-lu-green/15 px-2 py-[0.1em] text-[0.7em] font-bold text-lu-green-light">
+              {court.time}
             </span>
           )
         )}
       </div>
+
+      {/* note line */}
+      {editable ? (
+        <input
+          value={note}
+          placeholder="note (e.g. Men's Doubles 4.0)"
+          onChange={(e) => {
+            setNote(e.target.value)
+            updateCourt(court.id, { note: e.target.value })
+          }}
+          className="mt-[0.2em] w-full bg-transparent text-[0.58em] font-semibold uppercase tracking-widest text-white/55 placeholder-white/20 outline-none"
+        />
+      ) : (
+        court.note && (
+          <div className="truncate text-[0.58em] font-semibold uppercase tracking-widest text-white/40">
+            {court.note}
+          </div>
+        )
+      )}
 
       {editable ? (
         <div className="mt-[0.45em] flex flex-1 flex-col justify-center gap-[0.25em]">
@@ -91,12 +111,13 @@ function CourtTile({ court, editable }: { court: Court; editable: boolean }) {
         </div>
       )}
 
-      {editable && (court.teamA || court.teamB || court.note) && (
+      {editable && (court.teamA || court.teamB || court.time || court.note) && (
         <button
           onClick={() => {
             clearCourt(court.id)
             setTeamA('')
             setTeamB('')
+            setTime('')
             setNote('')
           }}
           className="absolute bottom-[0.5em] right-[0.7em] text-[0.5em] font-bold uppercase tracking-widest text-white/30 hover:text-red-400"

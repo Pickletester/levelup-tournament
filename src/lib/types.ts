@@ -4,6 +4,8 @@ export interface Court {
   name: string
   teamA: string
   teamB: string
+  /** match time, free text e.g. "2:30 PM" */
+  time?: string
   /** optional note, e.g. "Men's Doubles 4.0" */
   note?: string
 }

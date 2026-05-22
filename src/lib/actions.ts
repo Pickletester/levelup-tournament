@@ -53,7 +53,7 @@ export function addCourt() {
 
 export function updateCourt(
   courtId: string,
-  fields: Partial<{ name: string; teamA: string; teamB: string; note: string }>,
+  fields: Partial<{ name: string; teamA: string; teamB: string; time: string; note: string }>,
 ) {
   return mutate((draft) => {
     const c = draft.courts?.find((x) => x.id === courtId)
@@ -67,6 +67,7 @@ export function clearCourt(courtId: string) {
     if (c) {
       c.teamA = ''
       c.teamB = ''
+      c.time = ''
       c.note = ''
     }
   })

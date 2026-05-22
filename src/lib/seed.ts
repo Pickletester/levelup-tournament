@@ -7,6 +7,7 @@ export function buildSeed(): TournamentState {
     name: `Court ${i + 1}`,
     teamA: '',
     teamB: '',
+    time: '',
     note: '',
   }))
 

@@ -59,6 +59,7 @@ function normalizeCourts(raw: Court[] | undefined): Court[] {
       name: e?.name || `Court ${i + 1}`,
       teamA: e?.teamA ?? '',
       teamB: e?.teamB ?? '',
+      time: e?.time ?? '',
       note: e?.note ?? '',
     }
   })
