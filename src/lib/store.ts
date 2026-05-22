@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { onValue, ref, set } from 'firebase/database'
 import { firebaseEnabled, rtdb } from './firebase'
 import { buildSeed } from './seed'
-import type { Court, Division, Match, TournamentState } from './types'
+import type { Bracket, BracketMatch, Court, TournamentState } from './types'
 
 /** Fixed grid size — the board always shows this many courts (4 × 4). */
 const COURT_COUNT = 16
@@ -32,19 +32,20 @@ function toJson<T>(value: T): T {
  * Realtime Database returns `null` for empty arrays/objects and may omit
  * fields, so coerce everything back into the shape the app expects.
  */
-function normalizeMatch(m: Partial<Match>): Match {
+function normalizeBracket(raw: Partial<Bracket> | undefined): Bracket {
+  const matches: BracketMatch[] = (raw?.matches ?? []).map((m) => ({
+    id: m.id,
+    round: m.round ?? 0,
+    index: m.index ?? 0,
+    a: m.a ?? null,
+    b: m.b ?? null,
+    winner: m.winner ?? null,
+  }))
   return {
-    ...(m as Match),
-    games: (m.games ?? []).map((g) => ({ a: g?.a ?? 0, b: g?.b ?? 0 })),
-  }
-}
-
-function normalizeDivision(d: Partial<Division>): Division {
-  return {
-    ...(d as Division),
-    teams: (d.teams ?? []).map((t) => ({ ...t, players: t.players ?? [] })),
-    rrMatches: (d.rrMatches ?? []).map(normalizeMatch),
-    bracket: (d.bracket ?? []).map(normalizeMatch),
+    title: raw?.title ?? '',
+    participants: raw?.participants ?? [],
+    matches,
+    built: !!raw?.built,
   }
 }
 
@@ -65,11 +66,10 @@ function normalizeCourts(raw: Court[] | undefined): Court[] {
 
 function normalize(raw: Partial<TournamentState> | null): TournamentState {
   const seed = seedState()
-  const meta = raw?.meta ?? seed.meta
   return {
-    meta: { ...meta, events: meta.events ?? [] },
-    divisions: (raw?.divisions ?? []).map(normalizeDivision),
-    courts: normalizeCourts(raw?.courts ?? seed.courts),
+    meta: raw?.meta ?? seed.meta,
+    bracket: normalizeBracket(raw?.bracket),
+    courts: normalizeCourts(raw?.courts),
   }
 }
 
@@ -171,11 +171,12 @@ export async function mutate(
   }
 }
 
-/** Reset back to the seeded demo data. */
+/** Reset back to a clean, empty state. */
 export async function resetToSeed(): Promise<void> {
   await mutate((draft) => {
     const fresh = seedState()
     draft.meta = fresh.meta
-    draft.divisions = fresh.divisions
+    draft.bracket = fresh.bracket
+    draft.courts = fresh.courts
   })
 }

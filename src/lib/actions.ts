@@ -1,161 +1,38 @@
 import { mutate } from './store'
-import {
-  buildBracket,
-  computeStandings,
-  generateRoundRobin,
-  propagateBracket,
-  uid,
-} from './tournament'
-import type { Discipline, Division, Match } from './types'
+import { buildMatches, propagate, uid } from './tournament'
 
-function editDivision(divId: string, fn: (d: Division) => void) {
+/* -------------------------------- bracket ------------------------------- */
+
+export function buildBracket(names: string[]) {
   return mutate((draft) => {
-    const d = draft.divisions.find((x) => x.id === divId)
-    if (!d) return
-    fn(d)
-    d.updatedAt = Date.now()
+    const participants = names.map((n) => n.trim()).filter(Boolean)
+    draft.bracket.participants = participants
+    draft.bracket.matches = buildMatches(participants)
+    draft.bracket.built = draft.bracket.matches.length > 0
   })
 }
 
-function findMatch(d: Division, matchId: string): Match | undefined {
-  return (
-    d.rrMatches.find((m) => m.id === matchId) ||
-    d.bracket.find((m) => m.id === matchId)
-  )
-}
-
-/* --------------------------------- teams -------------------------------- */
-
-export function addTeam(divId: string, players: string[]) {
-  return editDivision(divId, (d) => {
-    d.teams.push({ id: uid('t'), players })
-    // schedule is stale once roster changes
-    if (d.phase === 'roundRobin' || d.phase === 'setup') {
-      d.rrMatches = d.teams.length >= 2 ? generateRoundRobin(d.teams, d.rrTarget) : []
-      d.phase = d.teams.length >= 2 ? 'roundRobin' : 'setup'
-    }
-  })
-}
-
-export function updateTeam(divId: string, teamId: string, players: string[]) {
-  return editDivision(divId, (d) => {
-    const t = d.teams.find((x) => x.id === teamId)
-    if (t) t.players = players
-  })
-}
-
-export function removeTeam(divId: string, teamId: string) {
-  return editDivision(divId, (d) => {
-    d.teams = d.teams.filter((t) => t.id !== teamId)
-    if (d.phase !== 'complete') {
-      d.rrMatches = d.teams.length >= 2 ? generateRoundRobin(d.teams, d.rrTarget) : []
-      d.bracket = []
-      d.phase = d.teams.length >= 2 ? 'roundRobin' : 'setup'
-    }
-  })
-}
-
-/* -------------------------------- scoring ------------------------------- */
-
-export function setScore(
-  divId: string,
-  matchId: string,
-  gameIndex: number,
-  slot: 'a' | 'b',
-  value: number,
-) {
-  return editDivision(divId, (d) => {
-    const m = findMatch(d, matchId)
-    if (!m || !m.games[gameIndex]) return
-    m.games[gameIndex][slot] = Math.max(0, Math.round(value) || 0)
-    if (d.bracket.some((x) => x.id === matchId)) {
-      d.bracket = propagateBracket(d.bracket)
-    }
-  })
-}
-
-export function adjustScore(
-  divId: string,
-  matchId: string,
-  gameIndex: number,
-  slot: 'a' | 'b',
-  delta: number,
-) {
-  return editDivision(divId, (d) => {
-    const m = findMatch(d, matchId)
-    if (!m || !m.games[gameIndex]) return
-    m.games[gameIndex][slot] = Math.max(0, m.games[gameIndex][slot] + delta)
-    if (d.bracket.some((x) => x.id === matchId)) {
-      d.bracket = propagateBracket(d.bracket)
-    }
-  })
-}
-
-export function clearMatch(divId: string, matchId: string) {
-  return editDivision(divId, (d) => {
-    const m = findMatch(d, matchId)
+export function setWinner(matchId: string, name: string | null) {
+  return mutate((draft) => {
+    const m = draft.bracket.matches.find((x) => x.id === matchId)
     if (!m) return
-    m.games = m.games.map(() => ({ a: 0, b: 0 }))
-    if (d.bracket.some((x) => x.id === matchId)) {
-      d.bracket = propagateBracket(d.bracket)
-    }
+    // tapping the current winner again clears it
+    m.winner = m.winner === name ? null : name
+    draft.bracket.matches = propagate(draft.bracket.matches)
   })
 }
 
-/* --------------------------------- phases ------------------------------- */
-
-export function regenerateRoundRobin(divId: string) {
-  return editDivision(divId, (d) => {
-    d.rrMatches = d.teams.length >= 2 ? generateRoundRobin(d.teams, d.rrTarget) : []
-    d.bracket = []
-    d.phase = d.teams.length >= 2 ? 'roundRobin' : 'setup'
-  })
-}
-
-export function startPlayoffs(divId: string) {
-  return editDivision(divId, (d) => {
-    const standings = computeStandings(d)
-    const seeds = standings
-      .slice(0, d.advanceCount)
-      .map((s) => s.team.id as string | null)
-    while (seeds.length < 4) seeds.push(null)
-    d.bracket = buildBracket(d, seeds)
-    d.phase = 'playoffs'
-  })
-}
-
-export function backToRoundRobin(divId: string) {
-  return editDivision(divId, (d) => {
-    d.bracket = []
-    d.phase = 'roundRobin'
-  })
-}
-
-/* ------------------------------- divisions ------------------------------ */
-
-export function addDivision(event: string, name: string, discipline: Discipline) {
+export function resetBracket() {
   return mutate((draft) => {
-    draft.divisions.push({
-      id: uid('div'),
-      event,
-      name,
-      discipline,
-      teams: [],
-      rrMatches: [],
-      bracket: [],
-      phase: 'setup',
-      rrTarget: 15,
-      medalTarget: 11,
-      medalBestOf: 3,
-      advanceCount: 4,
-      updatedAt: Date.now(),
-    })
+    draft.bracket.participants = []
+    draft.bracket.matches = []
+    draft.bracket.built = false
   })
 }
 
-export function removeDivision(divId: string) {
+export function setBracketTitle(title: string) {
   return mutate((draft) => {
-    draft.divisions = draft.divisions.filter((d) => d.id !== divId)
+    draft.bracket.title = title
   })
 }
 

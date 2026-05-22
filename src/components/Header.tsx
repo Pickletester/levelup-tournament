@@ -13,12 +13,20 @@ export function Header() {
           <Link to="/" className="shrink-0">
             <BrandLogo />
           </Link>
-          <Link
-            to="/courts"
-            className="hidden rounded-lg px-2.5 py-1.5 text-sm font-semibold text-ink-soft transition hover:text-lu-green-deep sm:block"
-          >
-            Courts
-          </Link>
+          <nav className="hidden items-center gap-1 sm:flex">
+            <Link
+              to="/"
+              className="rounded-lg px-2.5 py-1.5 text-sm font-semibold text-ink-soft transition hover:text-lu-green-deep"
+            >
+              Bracket
+            </Link>
+            <Link
+              to="/courts"
+              className="rounded-lg px-2.5 py-1.5 text-sm font-semibold text-ink-soft transition hover:text-lu-green-deep"
+            >
+              Courts
+            </Link>
+          </nav>
         </div>
         <div className="flex items-center gap-2.5">
           {admin && (

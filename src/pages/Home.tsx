@@ -1,152 +1,128 @@
 import { useState } from 'react'
-import { addDivision } from '../lib/actions'
+import { Link } from 'react-router-dom'
+import { buildBracket, resetBracket, setBracketTitle } from '../lib/actions'
 import { useAdmin } from '../lib/admin'
 import { useTournament } from '../lib/store'
-import type { Discipline, TournamentState } from '../lib/types'
-import { DivisionCard } from '../components/DivisionCard'
+import { champion } from '../lib/tournament'
+import { BracketView } from '../components/BracketView'
 
-function Hero({ meta }: { meta: TournamentState['meta'] }) {
-  return (
-    <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-lu-green-deep via-lu-green-dark to-lu-green px-6 py-10 text-white shadow-lg sm:px-10 sm:py-12">
-      <div className="absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
-      <div className="relative">
-        <span className="inline-block rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em]">
-          {meta.subtitle}
-        </span>
-        <h1 className="mt-3 text-4xl font-extrabold leading-tight sm:text-5xl">
-          {meta.name}
-        </h1>
-        <p className="mt-2 text-white/80">{meta.location}</p>
-        <div className="mt-5 flex flex-wrap gap-2 text-sm">
-          <span className="rounded-lg bg-white/15 px-3 py-1.5 font-semibold">
-            📅 {meta.dates}
-          </span>
-          <span className="rounded-lg bg-white/15 px-3 py-1.5 font-semibold">
-            🏓 {meta.ball}
-          </span>
-          <span className="rounded-lg bg-white/15 px-3 py-1.5 font-semibold">
-            Round robin → top 4 single-elim
-          </span>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function AddDivision({ events }: { events: string[] }) {
-  const [event, setEvent] = useState(events[0])
-  const [name, setName] = useState('')
-  const [discipline, setDiscipline] = useState<Discipline>('doubles')
+function PlayersPanel({
+  participants,
+  built,
+}: {
+  participants: string[]
+  built: boolean
+}) {
+  const [open, setOpen] = useState(!built)
+  const [text, setText] = useState(participants.join('\n'))
+  const count = text.split('\n').map((s) => s.trim()).filter(Boolean).length
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault()
-        if (!name.trim()) return
-        addDivision(event, name.trim(), discipline)
-        setName('')
-      }}
-      className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/60 p-3"
-    >
-      <span className="text-xs font-bold uppercase tracking-wide text-amber-700">
-        Add division
-      </span>
-      <select
-        value={event}
-        onChange={(e) => setEvent(e.target.value)}
-        className="rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
+    <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between text-sm font-bold uppercase tracking-wide text-amber-700"
       >
-        {events.map((ev) => (
-          <option key={ev}>{ev}</option>
-        ))}
-      </select>
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="e.g. 4.0 or 50+ 3.5"
-        className="w-40 rounded-lg border border-line px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-lu-green/40"
-      />
-      <select
-        value={discipline}
-        onChange={(e) => setDiscipline(e.target.value as Discipline)}
-        className="rounded-lg border border-line bg-white px-2 py-1.5 text-sm"
-      >
-        <option value="doubles">Doubles</option>
-        <option value="singles">Singles</option>
-      </select>
-      <button className="rounded-lg bg-lu-green px-4 py-1.5 text-sm font-semibold text-white hover:bg-lu-green-dark">
-        Add
+        <span>Players / teams {built && `(${participants.length})`}</span>
+        <span>{open ? '▾' : '▸'}</span>
       </button>
-    </form>
+
+      {open && (
+        <div className="mt-3">
+          <p className="mb-2 text-xs text-ink/55">
+            One player or team per line. They’ll be paired top-to-bottom in the order you list them.
+          </p>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={8}
+            placeholder={'Smith / Jones\nLee / Park\nCarter / Boyd\nRivera / Hale'}
+            className="w-full rounded-lg border border-line p-3 font-mono text-sm outline-none focus:ring-2 focus:ring-lu-green/40"
+          />
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => {
+                if (built && !confirm('Rebuild the bracket? This clears any results so far.')) return
+                buildBracket(text.split('\n'))
+                setOpen(false)
+              }}
+              disabled={count < 2}
+              className="rounded-lg bg-lu-green px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-lu-green-dark disabled:opacity-40"
+            >
+              {built ? 'Rebuild bracket' : 'Build bracket'} ({count})
+            </button>
+            {built && (
+              <button
+                onClick={() => {
+                  if (confirm('Clear the whole bracket?')) {
+                    resetBracket()
+                    setText('')
+                  }
+                }}
+                className="rounded-lg border border-line bg-white px-4 py-1.5 text-sm font-semibold text-ink-soft hover:border-red-300 hover:text-red-500"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
   )
 }
 
 export function Home() {
   const state = useTournament()
   const admin = useAdmin()
-  if (!state) return <Loading />
+  if (!state) return null
 
-  const { meta, divisions } = state
+  const { bracket } = state
+  const champ = champion(bracket.matches)
 
   return (
-    <div className="space-y-8">
-      <Hero meta={meta} />
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          {admin ? (
+            <input
+              value={bracket.title}
+              onChange={(e) => setBracketTitle(e.target.value)}
+              placeholder="Bracket name (e.g. Men's Doubles 4.0)"
+              className="rounded-lg border border-transparent bg-transparent text-2xl font-extrabold text-ink outline-none hover:border-line focus:border-line focus:ring-2 focus:ring-lu-green/30 sm:text-3xl"
+            />
+          ) : (
+            <h1 className="text-2xl font-extrabold text-ink sm:text-3xl">
+              {bracket.title || 'Tournament Bracket'}
+            </h1>
+          )}
+          <p className="text-sm text-ink/45">{state.meta.name}</p>
+        </div>
+        <Link
+          to="/tv"
+          target="_blank"
+          className="rounded-lg bg-ink px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-ink-soft"
+        >
+          📺 TV view
+        </Link>
+      </div>
 
-      {admin && <AddDivision events={meta.events} />}
+      {champ && (
+        <div className="rounded-2xl border border-lu-green/30 bg-lu-green/[0.08] px-5 py-4 text-lg font-bold text-lu-green-deep">
+          🏆 Champion: {champ}
+        </div>
+      )}
 
-      {meta.events.map((event) => {
-        const divs = divisions.filter((d) => d.event === event)
-        if (divs.length === 0 && !admin) return null
-        return (
-          <section key={event}>
-            <h2 className="mb-3 text-lg font-bold text-ink">{event}</h2>
-            {divs.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-line p-4 text-sm text-ink/40">
-                No divisions yet.
-              </p>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {divs.map((d) => (
-                  <DivisionCard key={d.id} division={d} />
-                ))}
-              </div>
-            )}
-          </section>
-        )
-      })}
+      {admin && <PlayersPanel participants={bracket.participants} built={bracket.built} />}
 
-      <FormatNote />
-    </div>
-  )
-}
-
-function FormatNote() {
-  return (
-    <section className="rounded-2xl border border-line bg-card p-5 text-sm text-ink/70 shadow-sm">
-      <h3 className="mb-2 font-bold text-ink">Format</h3>
-      <ul className="space-y-1.5">
-        <li>
-          <span className="font-semibold text-ink">Round robin → top 4</span> advance
-          to single-elimination playoffs.
-        </li>
-        <li>
-          Round robin &amp; semifinals:{' '}
-          <span className="font-semibold text-ink">first to 15, win by 2</span>.
-        </li>
-        <li>
-          Medal matches (Gold &amp; Bronze):{' '}
-          <span className="font-semibold text-ink">best of 3 to 11, win by 2</span>.
-        </li>
-        <li>Top 3 teams in each division receive medals 🥇🥈🥉.</li>
-      </ul>
-    </section>
-  )
-}
-
-function Loading() {
-  return (
-    <div className="grid place-items-center py-20 text-ink/40">
-      <div className="animate-pulse">Loading tournament…</div>
+      {bracket.built ? (
+        <BracketView matches={bracket.matches} editable={admin} variant="light" />
+      ) : (
+        <p className="rounded-2xl border border-dashed border-line bg-card p-10 text-center text-ink/45">
+          {admin
+            ? 'Add players above and tap “Build bracket”.'
+            : 'Bracket not set up yet — check back soon.'}
+        </p>
+      )}
     </div>
   )
 }
