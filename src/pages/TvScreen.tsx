@@ -27,8 +27,8 @@ function useBigScreenScale() {
 export function TvScreen() {
   useBigScreenScale()
   const state = useTournament()
-  const [view, setView] = useState<View>('bracket')
-  const [auto, setAuto] = useState(true)
+  const [view, setView] = useState<View>('courts')
+  const [auto, setAuto] = useState(false)
   const [left, setLeft] = useState(INTERVAL)
 
   // tick down once per second while auto-rotating

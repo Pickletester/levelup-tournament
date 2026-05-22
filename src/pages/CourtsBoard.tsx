@@ -45,11 +45,11 @@ function CourtTile({ court, editable }: { court: Court; editable: boolean }) {
               setTime(e.target.value)
               updateCourt(court.id, { time: e.target.value })
             }}
-            className="w-[5.5em] rounded-md bg-lu-green/15 px-2 py-[0.1em] text-right text-[0.7em] font-bold text-lu-green-light placeholder-lu-green-light/40 outline-none focus:bg-lu-green/25"
+            className="w-[5em] rounded-md bg-lu-green/15 px-2 py-[0.1em] text-right text-[1.1em] font-extrabold text-lu-green-light placeholder-lu-green-light/40 outline-none focus:bg-lu-green/25"
           />
         ) : (
           court.time && (
-            <span className="rounded-md bg-lu-green/15 px-2 py-[0.1em] text-[0.7em] font-bold text-lu-green-light">
+            <span className="rounded-md bg-lu-green/15 px-2.5 py-[0.1em] text-[1.2em] font-extrabold text-lu-green-light">
               {court.time}
             </span>
           )
