@@ -108,7 +108,7 @@ function CourtTile({ court, editable }: { court: Court; editable: boolean }) {
   )
 }
 
-function BoardGrid({ courts, editable }: { courts: Court[]; editable: boolean }) {
+export function BoardGrid({ courts, editable }: { courts: Court[]; editable: boolean }) {
   return (
     <div className="grid min-h-0 flex-1 grid-cols-2 gap-[0.9vw] overflow-y-auto p-[1.2vw] sm:grid-cols-3 md:grid-cols-4 md:grid-rows-4 md:overflow-hidden">
       {courts.map((c) => (

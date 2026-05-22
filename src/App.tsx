@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import { Header } from './components/Header'
 import { Home } from './pages/Home'
 import { TvDisplay } from './pages/TvDisplay'
+import { TvScreen } from './pages/TvScreen'
 import { CourtsPage, TvCourts } from './pages/CourtsBoard'
 
 function MainApp() {
@@ -25,7 +26,8 @@ export default function App() {
     <Routes>
       <Route path="/courts" element={<CourtsPage />} />
       <Route path="/tv/courts" element={<TvCourts />} />
-      <Route path="/tv" element={<TvDisplay />} />
+      <Route path="/tv/bracket" element={<TvDisplay />} />
+      <Route path="/tv" element={<TvScreen />} />
       <Route path="/*" element={<MainApp />} />
     </Routes>
   )
